@@ -85,7 +85,7 @@ namespace ResourceTrackerBackend
                 await next();
             });
 
-            app.UseCors(cors => cors.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
+            //app.UseCors(cors => cors.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
 
             if (app.Environment.IsDevelopment())
             {
