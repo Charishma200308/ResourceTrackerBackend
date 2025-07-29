@@ -30,15 +30,15 @@ namespace ResourceTrackerBackend
 
             builder.Services.AddControllers();
 
-            builder.Services.AddCors(options =>
-            {
-                options.AddPolicy("AllowAngularApp", policy =>
-                {
-                    policy.WithOrigins("http://localhost:4200")
-                          .AllowAnyHeader()
-                          .AllowAnyMethod();
-                });
-            });
+            //builder.Services.AddCors(options =>
+            //{
+            //    options.AddPolicy("AllowAngularApp", policy =>
+            //    {
+            //        policy.WithOrigins("http://localhost:4200")
+            //              .AllowAnyHeader()
+            //              .AllowAnyMethod();
+            //    });
+            //});
 
 
             builder.Services.AddEndpointsApiExplorer();
