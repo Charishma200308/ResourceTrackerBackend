@@ -98,7 +98,7 @@ namespace ResourceTrackerBackend
             app.UseAuthentication();
 
 
-            app.UseCors("AllowAngularApp");
+            //app.UseCors("AllowAngularApp");
 
             app.UseAuthorization();
 
