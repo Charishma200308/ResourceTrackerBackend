@@ -30,15 +30,15 @@ namespace ResourceTrackerBackend
 
             builder.Services.AddControllers();
 
-            //builder.Services.AddCors(options =>
-            //{
-            //    options.AddPolicy("AllowAngularApp", policy =>
-            //    {
-            //        policy.WithOrigins("http://localhost:4200")
-            //              .AllowAnyHeader()
-            //              .AllowAnyMethod();
-            //    });
-            //});
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("AllowFrontend", policy =>
+                {
+                    policy.WithOrigins("https://resource-tracker-frontend.vercel.app")
+                          .AllowAnyHeader()
+                          .AllowAnyMethod();
+                });
+            });
 
 
             builder.Services.AddEndpointsApiExplorer();
@@ -98,7 +98,7 @@ namespace ResourceTrackerBackend
             app.UseAuthentication();
 
 
-            //app.UseCors("AllowAngularApp");
+            app.UseCors("AllowFrontend");
 
             app.UseAuthorization();
 
