@@ -314,6 +314,7 @@ namespace ResourceTrackerBackend.DAO
             return result;
         }
 
+        // nice
         public List<string> GetProjects()
         {
             var list = new List<string>();
