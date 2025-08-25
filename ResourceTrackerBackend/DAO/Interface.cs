@@ -18,7 +18,11 @@ namespace ResourceTrackerBackend.DAO
         List<Details> GetByIds(List<int> ids);
 
         List<string> GetProjects();
+        InviteDeatils InviteUser(int empId);
 
+        Task BulkUpdateEmployeesAsync(BulkUpdateRequest request);
+
+        PagedEmployeeResult GetEmployeesPaged(PagedEmployeeRequest request);
     }
 
 

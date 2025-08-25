@@ -277,7 +277,6 @@ namespace ResourceTrackerBackend.DAO
                 using SqlConnection conn = new(_connectionString);
                 using SqlCommand cmd = conn.CreateCommand();
 
-                // Create parameterized IN clause
                 var parameters = string.Join(",", ids.Select((id, index) => $"@id{index}"));
                 cmd.CommandText = $"SELECT * FROM EmployeeDetails WHERE EmpId IN ({parameters})";
 
@@ -329,7 +328,139 @@ namespace ResourceTrackerBackend.DAO
             return list;
         }
 
+        public InviteDeatils InviteUser(int empId)
+        {
+            using var conn = new SqlConnection(_connectionString);
+            using var cmd = new SqlCommand("dbo.InviteUser", conn)
+            {
+                CommandType = CommandType.StoredProcedure
+            };
 
+            cmd.Parameters.AddWithValue("@EmpId", empId);
+
+            var usernameParam = new SqlParameter("@Username", SqlDbType.NVarChar, 50) { Direction = ParameterDirection.Output };
+            var passwordParam = new SqlParameter("@Password", SqlDbType.NVarChar, 100) { Direction = ParameterDirection.Output };
+            var resultParam = new SqlParameter("@Result", SqlDbType.Int) { Direction = ParameterDirection.Output };
+
+            cmd.Parameters.Add(usernameParam);
+            cmd.Parameters.Add(passwordParam);
+            cmd.Parameters.Add(resultParam);
+
+            conn.Open();
+            cmd.ExecuteNonQuery();
+
+            int result = (int)resultParam.Value;
+
+            if (result <= 0)
+            {
+                throw new InvalidOperationException("InviteUser failed with code: " + result);
+            }
+
+            return new InviteDeatils
+            {
+                Username = usernameParam.Value.ToString(),
+                Password = passwordParam.Value.ToString(),
+                UserId = result
+            };
+        }
+
+        public async Task BulkUpdateEmployeesAsync(BulkUpdateRequest request)
+        {
+            using var connection = new SqlConnection(_connectionString);
+            await connection.OpenAsync();
+
+            var employeeIdsTable = new DataTable();
+            employeeIdsTable.Columns.Add("EmpId", typeof(int));
+            foreach (var id in request.EmployeeIds)
+            {
+                employeeIdsTable.Rows.Add(id);
+            }
+
+            using var command = new SqlCommand("dbo.BulkUpdateEmployeesByIds", connection);
+            command.CommandType = CommandType.StoredProcedure;
+
+            var tvpParam = command.Parameters.AddWithValue("@EmpIds", employeeIdsTable);
+            tvpParam.SqlDbType = SqlDbType.Structured;
+            tvpParam.TypeName = "dbo.BulkEmployeeUpdateType";  
+
+            command.Parameters.AddWithValue("@dsgntion", (object?)request.dsgntion ?? DBNull.Value);
+            command.Parameters.AddWithValue("@reporting", (object?)request.reporting ?? DBNull.Value);
+            command.Parameters.AddWithValue("@billable", (object?)request.billable?? DBNull.Value); 
+            command.Parameters.AddWithValue("@skills", (object?)request.skills ?? DBNull.Value);
+            command.Parameters.AddWithValue("@projalloc", (object?)request.projalloc ?? DBNull.Value);
+            command.Parameters.AddWithValue("@location", (object?)request.location ?? DBNull.Value);
+            command.Parameters.AddWithValue("@doj", (object?)request.doj ?? DBNull.Value);
+
+            await command.ExecuteNonQueryAsync();
+        }
+
+        public PagedEmployeeResult GetEmployeesPaged(PagedEmployeeRequest request)
+        {
+            var result = new PagedEmployeeResult
+            {
+                Employees = new List<Details>()
+            };
+
+            try
+            {
+                // Step 1: Get all employees using your existing SP
+                List<Details> allEmployees = GetAll();
+
+                // Step 2: Apply filtering
+                if (!string.IsNullOrWhiteSpace(request.SearchText))
+                {
+                    string search = request.SearchText.ToLower();
+                    allEmployees = allEmployees.Where(e =>
+                        (e.name?.ToLower().Contains(search) ?? false) ||
+                        (e.dsgntion?.ToLower().Contains(search) ?? false) ||
+                        (e.projalloc?.ToLower().Contains(search) ?? false) ||
+                        (e.location?.ToLower().Contains(search) ?? false) ||
+                        (e.skills?.ToLower().Contains(search) ?? false)
+                    ).ToList();
+                }
+
+                // Step 3: Apply sorting
+                switch (request.SortColumn?.ToLower())
+                {
+                    case "name":
+                        allEmployees = request.SortDir == "desc"
+                            ? allEmployees.OrderByDescending(e => e.name).ToList()
+                            : allEmployees.OrderBy(e => e.name).ToList();
+                        break;
+
+                    case "dsgntion":
+                        allEmployees = request.SortDir == "desc"
+                            ? allEmployees.OrderByDescending(e => e.dsgntion).ToList()
+                            : allEmployees.OrderBy(e => e.dsgntion).ToList();
+                        break;
+
+                    case "projalloc":
+                        allEmployees = request.SortDir == "desc"
+                            ? allEmployees.OrderByDescending(e => e.projalloc).ToList()
+                            : allEmployees.OrderBy(e => e.projalloc).ToList();
+                        break;
+
+                    default:
+                        allEmployees = allEmployees.OrderBy(e => e.EmpId).ToList();
+                        break;
+                }
+
+                // Step 4: Set TotalCount before paging
+                result.TotalCount = allEmployees.Count;
+
+                // Step 5: Apply paging
+                result.Employees = allEmployees
+                    .Skip((request.PageNumber - 1) * request.PageSize)
+                    .Take(request.PageSize)
+                    .ToList();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in LINQ-based GetEmployeesPaged.");
+            }
+
+            return result;
+        }
 
     }
 

@@ -97,33 +97,14 @@ namespace ResourceTrackerBackend.Orchestration
             }
         }
 
-        public List<(int EmpId, bool Success)> BulkUpdateEmployees(List<Details> updatedEmployees)
+        public async Task BulkUpdateEmployeesAsync(BulkUpdateRequest request)
         {
-            var result = new List<(int EmpId, bool Success)>();
+            if (request.EmployeeIds == null || !request.EmployeeIds.Any())
+                throw new ArgumentException("EmployeeIds list cannot be empty.");
 
-            foreach (var emp in updatedEmployees)
-            {
-                if (!emp.EmpId.HasValue)
-                {
-                    _logger.LogWarning("Skipping employee update due to missing EmpId.");
-                    result.Add((-1, false));
-                    continue;
-                }
-
-                try
-                {
-                    var success = _repository.Update(emp.EmpId.Value, emp);
-                    result.Add((emp.EmpId.Value, success));
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, $"Error updating employee with ID {emp.EmpId}.");
-                    result.Add((emp.EmpId.Value, false));
-                }
-            }
-
-            return result;
+            await _repository.BulkUpdateEmployeesAsync(request);
         }
+
 
         public List<Details> GetEmployeesByIds(List<int> ids)
         {
@@ -131,6 +112,24 @@ namespace ResourceTrackerBackend.Orchestration
         }
 
         public List<string> GetProjects() => _repository.GetProjects();
+
+        public InviteDeatils? InviteEmployee(int empId)
+        {
+            try
+            {
+                return _repository.InviteUser(empId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error inviting employee with ID {empId}.");
+                return null;
+            }
+        }
+
+        public PagedEmployeeResult GetEmployeesPaged(PagedEmployeeRequest request)
+        {
+            return _repository.GetEmployeesPaged(request);
+        }
 
 
     }

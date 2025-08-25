@@ -154,22 +154,23 @@ namespace ResourceTrackerBackend.Controllers
         }
 
         [HttpPut("bulk-update")]
-        public IActionResult BulkUpdateEmployees([FromBody] List<Details> employees)
+        public async Task<IActionResult> BulkUpdate([FromBody] BulkUpdateRequest request)
         {
-            if (employees == null || employees.Count == 0)
-                return BadRequest(new { message = "No employee data provided." });
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
 
-            var updateResults = _employeeService.BulkUpdateEmployees(employees);
-
-            var summary = new
+            try
             {
-                Total = updateResults.Count,
-                SuccessCount = updateResults.Count(x => x.Success),
-                Failed = updateResults.Where(x => !x.Success).Select(x => x.EmpId).ToList()
-            };
-
-            return Ok(new { message = "Bulk update completed.", summary });
+                await _employeeService.BulkUpdateEmployeesAsync(request);
+                return Ok(new { Message = "Bulk update successful." });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Message = "Bulk update failed.", Details = ex.Message });
+            }
         }
+
+
 
         [HttpPost("get-by-ids")]
         public IActionResult GetEmployeesByIds([FromBody] List<int> ids)
@@ -196,6 +197,32 @@ namespace ResourceTrackerBackend.Controllers
                 return StatusCode(500, new { message = "Failed to retrieve projects.", error = ex.Message });
             }
         }
+
+        [HttpPost("invite/{empId}")]
+        public IActionResult Invite(int empId)
+        {
+            var result = _employeeService.InviteEmployee(empId);
+            if (result == null)
+                return BadRequest("Failed to invite employee.");
+
+            return Ok(result); // returns username and password
+        }
+
+        [HttpPost("paged")]
+        public IActionResult GetEmployeesPaged([FromBody] PagedEmployeeRequest request)
+        {
+            try
+            {
+                var result = _employeeService.GetEmployeesPaged(request);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving paged employee list.");
+                return StatusCode(500, new { message = "Error retrieving employee list.", error = ex.Message });
+            }
+        }
+
 
     }
 }
