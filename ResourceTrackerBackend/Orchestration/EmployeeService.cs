@@ -131,6 +131,13 @@ namespace ResourceTrackerBackend.Orchestration
             return _repository.GetEmployeesPaged(request);
         }
 
+        public async Task AddEmployeesBulkAsync(List<Details> employees)
+        {
+            // You can add validation here if needed (e.g., email format, duplicates in list, etc)
+
+            // Call DAL method
+            await _repository.AddEmployeesBulkToDbAsync(employees);
+        }
 
     }
 }

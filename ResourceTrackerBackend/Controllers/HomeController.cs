@@ -223,6 +223,15 @@ namespace ResourceTrackerBackend.Controllers
             }
         }
 
+        [HttpPost("bulk-add")]
+        public async Task<IActionResult> AddEmployeesBulk([FromBody] List<Details> employees)
+        {
+            if (employees == null || !employees.Any())
+                return BadRequest("Employee list is empty");
 
+            await _employeeService.AddEmployeesBulkAsync(employees);
+
+            return Ok(new { message = "Employees added successfully." });
+        }
     }
 }

@@ -462,6 +462,45 @@ namespace ResourceTrackerBackend.DAO
             return result;
         }
 
+        public async Task AddEmployeesBulkToDbAsync(List<Details> employees)
+        {
+            var table = ConvertToDataTable(employees);
+
+            using var connection = new SqlConnection(_connectionString);
+            await connection.OpenAsync();
+
+            using var command = new SqlCommand("dbo.AddResourcesBulk", connection);
+            command.CommandType = CommandType.StoredProcedure;
+
+            var param = command.Parameters.AddWithValue("@Employees", table);
+            param.SqlDbType = SqlDbType.Structured;
+            param.TypeName = "dbo.EmployeeType";
+
+            await command.ExecuteNonQueryAsync();
+        }
+
+        private DataTable ConvertToDataTable(List<Details> employees)
+        {
+            var dt = new DataTable();
+
+            dt.Columns.Add("name", typeof(string));
+            dt.Columns.Add("dsgntion", typeof(string));
+            dt.Columns.Add("reporting", typeof(string));
+            dt.Columns.Add("billable", typeof(string));
+            dt.Columns.Add("skills", typeof(string));
+            dt.Columns.Add("projalloc", typeof(string));
+            dt.Columns.Add("location", typeof(string));
+            dt.Columns.Add("mail", typeof(string));
+            dt.Columns.Add("doj", typeof(string));
+            dt.Columns.Add("remarks", typeof(string));
+
+            foreach (var emp in employees)
+            {
+                dt.Rows.Add(emp.name, emp.dsgntion, emp.reporting, emp.billable, emp.skills, emp.projalloc, emp.location, emp.mail, emp.doj, emp.remarks);
+            }
+
+            return dt;
+        }
     }
 
 }

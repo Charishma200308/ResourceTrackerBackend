@@ -23,6 +23,8 @@ namespace ResourceTrackerBackend.DAO
         Task BulkUpdateEmployeesAsync(BulkUpdateRequest request);
 
         PagedEmployeeResult GetEmployeesPaged(PagedEmployeeRequest request);
+
+        Task AddEmployeesBulkToDbAsync(List<Details> employees);
     }
 
 
