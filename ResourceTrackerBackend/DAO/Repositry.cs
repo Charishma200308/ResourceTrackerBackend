@@ -407,17 +407,28 @@ namespace ResourceTrackerBackend.DAO
                 List<Details> allEmployees = GetAll();
 
                 // Step 2: Apply filtering
-                if (!string.IsNullOrWhiteSpace(request.SearchText))
+                if (request.Filters != null && request.Filters.Any())
                 {
-                    string search = request.SearchText.ToLower();
-                    allEmployees = allEmployees.Where(e =>
-                        (e.name?.ToLower().Contains(search) ?? false) ||
-                        (e.dsgntion?.ToLower().Contains(search) ?? false) ||
-                        (e.projalloc?.ToLower().Contains(search) ?? false) ||
-                        (e.location?.ToLower().Contains(search) ?? false) ||
-                        (e.skills?.ToLower().Contains(search) ?? false)
-                    ).ToList();
+                    foreach (var filter in request.Filters)
+                    {
+                        var field = filter.Field?.ToLower();
+                        var value = filter.Value?.ToLower();
+
+                        if (string.IsNullOrEmpty(field) || string.IsNullOrEmpty(value))
+                            continue;
+
+                        allEmployees = field switch
+                        {
+                            "name" => allEmployees.Where(e => e.name?.ToLower().Contains(value) ?? false).ToList(),
+                            "dsgntion" => allEmployees.Where(e => e.dsgntion?.ToLower().Contains(value) ?? false).ToList(),
+                            "projalloc" => allEmployees.Where(e => e.projalloc?.ToLower().Contains(value) ?? false).ToList(),
+                            "location" => allEmployees.Where(e => e.location?.ToLower().Contains(value) ?? false).ToList(),
+                            "skills" => allEmployees.Where(e => e.skills?.ToLower().Contains(value) ?? false).ToList(),
+                            _ => allEmployees
+                        };
+                    }
                 }
+
 
                 // Step 3: Apply sorting
                 switch (request.SortColumn?.ToLower())
